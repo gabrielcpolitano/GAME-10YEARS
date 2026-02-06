@@ -1,4 +1,3 @@
-
 import { neon } from '@neondatabase/serverless';
 import { UserContext, Milestone, SavedSession } from '../types';
 
@@ -7,17 +6,21 @@ const DATABASE_URL = 'postgresql://neondb_owner:npg_7W1uVGilZYMn@ep-noisy-firefl
 // Inicialização segura do cliente SQL
 let sql: any;
 try {
-  sql = neon(DATABASE_URL);
+  if (DATABASE_URL) {
+    sql = neon(DATABASE_URL);
+  }
 } catch (e) {
-  console.error("Erro ao inicializar cliente Neon:", e);
+  console.error("Erro crítico ao inicializar cliente Neon:", e);
 }
 
 const SESSION_KEY = 'gabriel_odyssey_user_id';
 
 const ensureTableExists = async () => {
-  if (!sql) return;
+  if (!sql) {
+    console.warn("DB Service: SQL client não inicializado.");
+    return;
+  }
   try {
-    // Usamos um timeout para garantir que o app não trave se o banco demorar a responder
     await Promise.race([
       sql`
         CREATE TABLE IF NOT EXISTS trajectories (
@@ -31,7 +34,7 @@ const ensureTableExists = async () => {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Neon')), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Neon')), 8000))
     ]);
   } catch (error) {
     console.warn('DB Service: Tabela não pôde ser verificada ou já existe.', error);
@@ -75,6 +78,8 @@ export const getAllTrajectories = async (): Promise<SavedSession[]> => {
   try {
     await ensureTableExists();
     const result = await sql`SELECT * FROM trajectories ORDER BY updated_at DESC LIMIT 20`;
+    if (!result) return [];
+    
     return result.map((row: any) => ({
       id: row.id,
       context: {
@@ -83,8 +88,8 @@ export const getAllTrajectories = async (): Promise<SavedSession[]> => {
         tenYearGoal: row.ten_year_goal
       },
       milestones: typeof row.milestones === 'string' ? JSON.parse(row.milestones) : row.milestones,
-      distance: parseFloat(row.current_distance),
-      currentIndex: parseInt(row.current_index)
+      distance: parseFloat(row.current_distance || 0),
+      currentIndex: parseInt(row.current_index || -1)
     }));
   } catch (error) {
     console.error('Error fetching all trajectories:', error);
@@ -110,8 +115,8 @@ export const getSavedTrajectory = async (): Promise<SavedSession | null> => {
         tenYearGoal: row.ten_year_goal
       },
       milestones: typeof row.milestones === 'string' ? JSON.parse(row.milestones) : row.milestones,
-      distance: parseFloat(row.current_distance),
-      currentIndex: parseInt(row.current_index)
+      distance: parseFloat(row.current_distance || 0),
+      currentIndex: parseInt(row.current_index || -1)
     };
   } catch (error) {
     console.warn('DB Service: Falha ao carregar dados.', error);
@@ -122,7 +127,6 @@ export const getSavedTrajectory = async (): Promise<SavedSession | null> => {
 export const deleteTrajectory = async (id?: string) => {
   if (!sql) return;
   try {
-    await ensureTableExists();
     const targetId = id || getUserId();
     await sql`DELETE FROM trajectories WHERE id = ${targetId}`;
     if (!id) localStorage.removeItem(SESSION_KEY);
