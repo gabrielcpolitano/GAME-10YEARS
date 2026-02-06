@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/fiber": "^9.5.0",
-    "@google/genai": "^1.40.0",
-    "@neondatabase/serverless": "^0.10.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "lucide-react": "^0.563.0",
-    "three": "^0.182.0",
-    "@react-three/drei": "^10.7.7"
+    "three": "0.170.0",
+    "@react-three/fiber": "9.0.0",
+    "@react-three/drei": "9.117.3",
+    "lucide-react": "0.460.0",
+    "@google/genai": "1.40.0",
+    "@neondatabase/serverless": "0.10.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

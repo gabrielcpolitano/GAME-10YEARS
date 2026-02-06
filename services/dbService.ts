@@ -3,12 +3,21 @@ import { neon } from '@neondatabase/serverless';
 import { UserContext, Milestone, SavedSession } from '../types';
 
 const DATABASE_URL = 'postgresql://neondb_owner:npg_7W1uVGilZYMn@ep-noisy-firefly-aivnu1g0-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require';
-const sql = neon(DATABASE_URL);
+
+// Inicialização segura do cliente SQL
+let sql: any;
+try {
+  sql = neon(DATABASE_URL);
+} catch (e) {
+  console.error("Erro ao inicializar cliente Neon:", e);
+}
 
 const SESSION_KEY = 'gabriel_odyssey_user_id';
 
 const ensureTableExists = async () => {
+  if (!sql) return;
   try {
+    // Usamos um timeout para garantir que o app não trave se o banco demorar a responder
     await Promise.race([
       sql`
         CREATE TABLE IF NOT EXISTS trajectories (
@@ -22,10 +31,10 @@ const ensureTableExists = async () => {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Neon')), 4000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Neon')), 5000))
     ]);
   } catch (error) {
-    console.warn('DB Service: Tabela não pôde ser verificada.', error);
+    console.warn('DB Service: Tabela não pôde ser verificada ou já existe.', error);
   }
 };
 
@@ -39,6 +48,7 @@ const getUserId = () => {
 };
 
 export const saveTrajectory = async (session: SavedSession) => {
+  if (!sql) return;
   try {
     await ensureTableExists();
     const id = session.id || getUserId();
@@ -61,10 +71,11 @@ export const saveTrajectory = async (session: SavedSession) => {
 };
 
 export const getAllTrajectories = async (): Promise<SavedSession[]> => {
+  if (!sql) return [];
   try {
     await ensureTableExists();
     const result = await sql`SELECT * FROM trajectories ORDER BY updated_at DESC LIMIT 20`;
-    return result.map(row => ({
+    return result.map((row: any) => ({
       id: row.id,
       context: {
         name: row.name,
@@ -82,6 +93,7 @@ export const getAllTrajectories = async (): Promise<SavedSession[]> => {
 };
 
 export const getSavedTrajectory = async (): Promise<SavedSession | null> => {
+  if (!sql) return null;
   try {
     await ensureTableExists();
     const id = getUserId();
@@ -108,6 +120,7 @@ export const getSavedTrajectory = async (): Promise<SavedSession | null> => {
 };
 
 export const deleteTrajectory = async (id?: string) => {
+  if (!sql) return;
   try {
     await ensureTableExists();
     const targetId = id || getUserId();
