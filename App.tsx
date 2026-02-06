@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { GameState, Milestone, UserContext, SavedSession } from './types';
@@ -96,9 +95,13 @@ const App: React.FC = () => {
       } else {
         throw new Error("Falha na geração da jornada.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Erro ao conectar com a IA. Tente novamente.");
+      if (err.message === "API_KEY_MISSING") {
+        setError("Erro: A chave da API Gemini não foi configurada no ambiente da Vercel.");
+      } else {
+        setError("Ocorreu um erro ao conectar com a IA. Tente novamente mais tarde.");
+      }
       setGameState(GameState.INTRO);
     }
   };
@@ -205,7 +208,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-slate-950 via-slate-900 to-black p-6">
             <div className="max-w-2xl w-full text-center space-y-16 animate-in fade-in zoom-in duration-1000">
               <div className="space-y-6">
-                <h1 className="text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase">
+                <h1 className="text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase leading-none">
                   Gabriel's<br/>Odyssey
                 </h1>
                 <p className="text-slate-400 font-mono text-sm tracking-[0.5em] uppercase">Sua Jornada Infinita no Neon DB</p>
@@ -252,7 +255,7 @@ const App: React.FC = () => {
         {gameState === GameState.LOADING_DB && (
           <div className="flex flex-col items-center justify-center w-full h-full bg-slate-950">
             <RefreshCw className="w-16 h-16 text-blue-500 animate-spin mb-8" />
-            <h2 className="text-2xl font-black tracking-[0.3em] uppercase animate-pulse">Sincronizando com Neon...</h2>
+            <h2 className="text-2xl font-black tracking-[0.3em] uppercase animate-pulse text-white">Sincronizando com Neon...</h2>
           </div>
         )}
 
@@ -309,6 +312,13 @@ const App: React.FC = () => {
                 <h1 className="text-5xl font-black tracking-tighter uppercase text-white">Criar sua Odisseia</h1>
                 <p className="text-slate-400 mt-3 font-medium text-lg italic">"O futuro pertence àqueles que acreditam na beleza de seus sonhos."</p>
               </div>
+
+              {error && (
+                <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm justify-center">
+                  <AlertCircle size={18} /> {error}
+                </div>
+              )}
+
               <form onSubmit={handleStartJourney} className="space-y-8">
                 <div className="space-y-6">
                   <div className="space-y-3">
@@ -370,7 +380,7 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex justify-center mb-10">
-               {/* Contador de distância removido conforme solicitação */}
+               {/* HUD dinâmico central desativado */}
             </div>
 
             {showMilestoneDialog && currentMilestone && (
@@ -412,7 +422,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* RESUME PROMPT (Fallback para garantir que nada fique preto) */}
+        {/* RESUME PROMPT */}
         {gameState === GameState.RESUME_PROMPT && (
           <div className="flex flex-col items-center justify-center w-full h-full bg-slate-950">
              <button onClick={() => setGameState(GameState.LANDING)} className="px-10 py-5 bg-blue-600 text-white font-black rounded-full shadow-2xl">VOLTAR AO INÍCIO</button>
@@ -420,16 +430,6 @@ const App: React.FC = () => {
         )}
 
       </div>
-      
-      {/* Custom Styles for Scrollbar */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.5); }
-        .animate-spin-slow { animation: spin 4s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };

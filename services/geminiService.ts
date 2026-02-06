@@ -1,16 +1,15 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Milestone, UserContext } from "../types";
 
 export const generateRoadmap = async (context: UserContext): Promise<Milestone[]> => {
-  // Obtém a chave de ambiente injetada pelo Vite
+  // Obtém a chave de ambiente injetada pelo Vite no momento do uso
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "") {
-    throw new Error("A chave de API (API_KEY) não foi configurada no ambiente.");
+    throw new Error("API_KEY_MISSING");
   }
 
-  // Inicializa apenas no momento do uso
+  // Inicializa apenas quando solicitado para evitar erros de boot
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
