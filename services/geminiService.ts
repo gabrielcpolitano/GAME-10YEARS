@@ -2,10 +2,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Milestone, UserContext } from "../types";
 
-// Always use the process.env.API_KEY directly as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const generateRoadmap = async (context: UserContext): Promise<Milestone[]> => {
+  // Obtém a chave de ambiente injetada pelo Vite
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey === "") {
+    throw new Error("A chave de API (API_KEY) não foi configurada no ambiente.");
+  }
+
+  // Inicializa apenas no momento do uso
+  const ai = new GoogleGenAI({ apiKey });
+
   const prompt = `
     Crie uma jornada de 10 anos para uma pessoa chamada ${context.name}, começando no final de 2026 e terminando no final de 2035.
     Status Atual: ${context.currentStatus}
