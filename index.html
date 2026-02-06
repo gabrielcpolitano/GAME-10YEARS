@@ -22,8 +22,8 @@
       @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
     <script>
-      // Garante que o objeto process existe antes de qualquer módulo carregar
-      window.process = { env: { API_KEY: "" } };
+      // Garante a existência do objeto process antes do carregamento de qualquer módulo
+      window.process = window.process || { env: { API_KEY: "" } };
     </script>
     <script type="importmap">
 {
